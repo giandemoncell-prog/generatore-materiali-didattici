@@ -1,0 +1,28 @@
+# requirements_full.txt — Merge di requirements.txt + requirements_pro.txt +
+# requirements_streamlit.txt, con in aggiunta la toolchain di test.
+# Usa il vincolo più stringente quando le versioni differivano fra i file.
+
+# ── Core / Web (streamlit_demo.py, generatore_pro.py) ──
+streamlit>=1.35.0
+google-genai>=2.5.0
+python-docx>=1.1.0
+python-pptx>=0.6.23
+pyyaml>=6.0
+
+# ── Funzionalità Pro — Google Classroom (F.3) ──
+google-api-python-client>=2.0.0
+google-auth-httplib2>=0.2.0
+google-auth-oauthlib>=1.0.0
+
+# ── Funzionalità Pro — Video (F.5) ──
+# Richiede anche: sudo apt-get install ffmpeg  (Linux/Chromebook)
+google-cloud-texttospeech>=2.0.0
+moviepy>=2.0.0
+pillow>=10.0.0
+
+# ── Toolchain di test e linting ──
+pytest>=8.0
+pytest-mock>=3.0
+ruff>=0.1.0
+mypy>=1.0.0
+types-PyYAML>=6.0

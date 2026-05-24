@@ -1,0 +1,29 @@
+identificativo:
+  nome: Mario
+  classroom_course_id: ""
+
+presentazione:
+  font: "OpenDyslexic"
+  max_punti_per_slide: 3
+  max_righe_paragrafo: 4
+
+profilo_cognitivo:
+  aree_difficolta:
+    lettura: alta
+    scrittura: alta
+    calcolo: bassa
+    memoria_di_lavoro: media
+    attenzione: media
+  aree_forza:
+    comprensione_orale: alta
+    ragionamento_visivo: alta
+
+strumenti_compensativi:
+  sintesi_vocale: true
+  mappe_concettuali: true
+  calcolatrice: true
+
+note_osservazioni:
+  - "Frasi brevi (max 20 parole). Un concetto per paragrafo."
+  - "Parole chiave in grassetto (max 3 per paragrafo)."
+  - "Glossario finale con 5 termini difficili."

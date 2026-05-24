@@ -1,0 +1,39 @@
+# Ambiente virtuale
+.venv/
+venv/
+
+# Chiave API — mai nel repo
+.env
+
+# Output generati (dati personali studenti)
+output/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+
+# Cache strumenti
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Pacchetti distribuibili
+dist/
+
+# File temporanei di test
+pytest_output.txt
+
+# Credenziali Google Cloud
+*.json
+!package.json
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# macOS
+.DS_Store
+
+# File OMC
+.omc/

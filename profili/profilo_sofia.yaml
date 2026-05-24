@@ -1,0 +1,30 @@
+identificativo:
+  nome: Sofia
+  classroom_course_id: ""
+
+presentazione:
+  font: "Arial"
+  max_punti_per_slide: 3
+  max_righe_paragrafo: 3
+
+profilo_cognitivo:
+  aree_difficolta:
+    lettura: media
+    scrittura: media
+    calcolo: bassa
+    memoria_di_lavoro: media
+    attenzione: alta
+  aree_forza:
+    comprensione_visiva: alta
+    motivazione: alta
+
+strumenti_compensativi:
+  sintesi_vocale: true
+  mappe_concettuali: true
+  dizionario_bilingue: true
+
+note_osservazioni:
+  - "Usa analogie concrete della vita quotidiana per ogni concetto astratto."
+  - "Evita metafore e modi di dire. Preferisci elenchi puntati ai paragrafi."
+  - "Glossario sempre presente. Frasi max 18 parole."
+  - "Italiano L2: preferisci vocabolario di base, evita sinonimi rari."

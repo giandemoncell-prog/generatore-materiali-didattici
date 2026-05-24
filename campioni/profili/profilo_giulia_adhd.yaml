@@ -1,0 +1,40 @@
+# Profilo studente — Giulia (ADHD)
+# Schema conforme a core/profiles.py e a generatore_pro.py / gui_generatore.py.
+# Copia questo file in profili/profilo_giulia.yaml per usarlo con la CLI/GUI.
+
+identificativo:
+  nome: Giulia
+  classe: "1ª secondaria di secondo grado"
+  classroom_course_id: ""        # opzionale, per integrazione Google Classroom (F.3)
+
+presentazione:
+  font: "Verdana"                # font ad alta leggibilità
+  max_punti_per_slide: 3
+  max_righe_paragrafo: 3
+
+profilo_cognitivo:
+  aree_difficolta:
+    lettura: media               # affaticamento nella lettura prolungata
+    scrittura: media
+    calcolo: bassa
+    memoria_di_lavoro: alta      # forte impatto del deficit attentivo sulla MdL
+    attenzione: alta             # ADHD: disattenzione e distraibilità marcate
+  aree_forza:
+    ragionamento_visivo: alta
+    creativita: alta
+    comprensione_orale: media
+
+strumenti_compensativi:
+  mappe_concettuali: true
+  sintesi_vocale: true
+  timer_visivo: true
+  evidenziatori_colore: true
+  tempi_estesi: true
+
+note_osservazioni:
+  - "Spezza i contenuti in micro-blocchi brevi con un titolo per ciascuno."
+  - "Inserisci checkpoint frequenti: una domanda di controllo ogni 2-3 blocchi."
+  - "Usa elenchi puntati e numerati; evita muri di testo continuo."
+  - "Evidenzia in grassetto solo le 2-3 parole davvero centrali per blocco."
+  - "Aggancia i concetti astratti a esempi concreti e visivi."
+  - "Mantieni una struttura prevedibile e ricorrente fra i materiali."

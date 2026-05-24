@@ -1,0 +1,31 @@
+identificativo:
+  nome: Lorenzo
+  classroom_course_id: ""
+
+presentazione:
+  font: "Verdana"
+  max_punti_per_slide: 2
+  max_righe_paragrafo: 2
+
+profilo_cognitivo:
+  aree_difficolta:
+    lettura: alta
+    scrittura: alta
+    calcolo: media
+    memoria_di_lavoro: alta
+    attenzione: alta
+  aree_forza:
+    memoria_visiva: alta
+    routine_strutturata: alta
+
+strumenti_compensativi:
+  sintesi_vocale: true
+  comunicazione_aumentativa: true
+  supporto_visivo_caa: true
+
+note_osservazioni:
+  - "Una sola informazione per frase. Frasi max 12 parole."
+  - "Struttura rigida e prevedibile: stesso formato per ogni argomento."
+  - "Per ogni concetto chiave suggerisci un simbolo visivo descrittivo tra parentesi quadre: [SIMBOLO: descrizione]."
+  - "Niente metafore, niente ironia, niente linguaggio figurato."
+  - "Usa sempre lo stesso ordine: definizione, esempio concreto, simbolo visivo."
