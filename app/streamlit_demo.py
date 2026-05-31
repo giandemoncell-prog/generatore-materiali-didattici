@@ -21,7 +21,7 @@ try:
         prompt_quiz as _core_prompt_quiz,
         prompt_glossario_pro as _core_prompt_glossario_pro,
     )
-    from core.profiles import carica_profilo_da_bytes as _core_carica_profilo_da_bytes
+    from core.profiles import carica_profilo_da_bytes as _core_carica_profilo_da_bytes, PROFILI_DEFAULT as _CORE_PROFILI_DEFAULT
     from core.exporters import export_docx_bytes as _core_export_docx_bytes, export_pptx_bytes as _core_export_pptx_bytes
     _CORE_AVAILABLE = True
 except ImportError:
@@ -38,7 +38,7 @@ else:
     MAX_RICHIESTE = 5   # per sessione — si azzera ricaricando la pagina
     MAX_CHARS = 5000    # fix 5: limite caratteri testo input
 
-PROFILI = {
+PROFILI = _CORE_PROFILI_DEFAULT if _CORE_AVAILABLE else {
     "Mario — DSA (dislessia + disgrafia)": {
         "max_parole_frase": 20,
         "punti_per_blocco": 3,
@@ -295,6 +295,11 @@ if "testo_da_file" not in st.session_state:
 
 with st.sidebar:
     st.header("Profilo studente")
+    st.markdown(
+        "**Passo 1:** crea il profilo nel [Generatore Profili](https://generatore-profili-dsa.streamlit.app)  \n"
+        "**Passo 2 di 2:** carica il .yaml qui sotto o seleziona un profilo esempio"
+    )
+    st.divider()
     nome_profilo = st.selectbox("Seleziona il profilo", list(PROFILI.keys()))
     profilo = PROFILI[nome_profilo].copy()
 
@@ -365,7 +370,7 @@ if file_caricato is not None:
     if file_id_corrente != st.session_state.file_id:
         st.session_state.file_id = file_id_corrente
         if file_caricato.name.endswith(".txt"):
-            st.session_state.testo_da_file = file_caricato.read().decode("utf-8")
+            st.session_state.testo_da_file = file_caricato.read().decode("utf-8-sig")
         elif file_caricato.name.endswith(".docx"):
             try:
                 from docx import Document
@@ -544,11 +549,26 @@ if "risultati" in st.session_state and st.session_state.risultati.get("testo"):
         else:
             st.info("Glossario PRO non disponibile per questa generazione.")
 
+st.divider()
+col_cta, col_profili = st.columns(2)
+with col_cta:
+    st.markdown(
+        "📖 **Vuoi il sistema completo?** Il libro include tutti i prompt, i casi pratici "
+        "Mario/Sofia/Lorenzo e il workflow settimanale.\n\n"
+        "[→ Acquista su Amazon (9,99€)](https://amzn.to/434R6aA)",
+    )
+with col_profili:
+    st.markdown(
+        "👤 **Non hai ancora un profilo YAML?** Usa il Generatore Profili per creare "
+        "il profilo operativo del tuo studente in 5 minuti.\n\n"
+        "[→ Generatore Profili Studente](https://generatore-profili-dsa.streamlit.app)",
+    )
+
 st.markdown(
     '<div class="footer">'
-    "Demo gratuita del libro <strong>Intelligenza Artificiale per la Didattica Inclusiva</strong> "
-    "— Gianluca Demontis | gianlucademontis.xyz | "
-    "Il libro completo con sistema Profilo + Prompt + Strumenti è disponibile su Amazon KDP."
+    "Demo gratuita di <strong>Intelligenza Artificiale per la Didattica Inclusiva</strong> "
+    "— <a href='https://gianlucademontis.xyz' target='_blank'>gianlucademontis.xyz</a> | "
+    "<a href='https://amzn.to/434R6aA' target='_blank'>Acquista su Amazon</a>"
     "</div>",
     unsafe_allow_html=True,
 )
