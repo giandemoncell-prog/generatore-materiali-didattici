@@ -351,10 +351,13 @@ with st.sidebar:
     )
 
     st.divider()
-    rimanenti = MAX_RICHIESTE - st.session_state.contatore
-    st.caption(f"Generazioni disponibili: {rimanenti}/{MAX_RICHIESTE}")
-    if rimanenti == 0:
-        st.warning("Limite demo raggiunto. Ricarica la pagina per ricominciare.")
+    if MAX_RICHIESTE == 0:
+        st.caption("Generazioni disponibili: illimitate")
+    else:
+        rimanenti = MAX_RICHIESTE - st.session_state.contatore
+        st.caption(f"Generazioni disponibili: {rimanenti}/{MAX_RICHIESTE}")
+        if rimanenti == 0:
+            st.warning("Limite demo raggiunto. Ricarica la pagina per ricominciare.")
 
 # ── UPLOAD FILE ───────────────────────────────────────────────────────────────
 
@@ -397,13 +400,15 @@ n_chars = len(testo_input)
 if n_chars > MAX_CHARS:
     st.warning(f"Testo troppo lungo ({n_chars:,} caratteri). Limite: {MAX_CHARS:,}. Accorcia il testo.")
 
+limite_raggiunto = MAX_RICHIESTE != 0 and st.session_state.contatore >= MAX_RICHIESTE
+
 col1, col2 = st.columns([1, 4])
 with col1:
     genera_btn = st.button(
         "Genera materiale",
         type="primary",
         disabled=(
-            st.session_state.contatore >= MAX_RICHIESTE
+            limite_raggiunto
             or not testo_input.strip()
             or n_chars > MAX_CHARS
         ),
@@ -412,7 +417,7 @@ with col1:
 # ── GENERAZIONE ───────────────────────────────────────────────────────────────
 
 if genera_btn and testo_input.strip() and n_chars <= MAX_CHARS:
-    if st.session_state.contatore >= MAX_RICHIESTE:
+    if limite_raggiunto:
         st.warning("Limite demo raggiunto.")
     else:
         tipo_lettera = tipo_quiz[0]

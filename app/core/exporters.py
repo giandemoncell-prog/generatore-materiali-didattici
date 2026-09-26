@@ -8,12 +8,37 @@
 from __future__ import annotations
 
 import io
+import re
 from typing import Any
 
 from docx import Document
 from docx.shared import Pt
 from pptx import Presentation
 from pptx.util import Inches, Pt as PptPt
+
+_INLINE_RE = re.compile(r"\*\*(.+?)\*\*|\*(.+?)\*")
+
+
+def _aggiungi_paragrafo_formattato(doc: Any, testo: str, size_pt: int = 12) -> Any:
+    """Aggiunge un paragrafo con **grassetto** e *corsivo* da markdown inline."""
+    para = doc.add_paragraph()
+    last = 0
+    for m in _INLINE_RE.finditer(testo):
+        if m.start() > last:
+            run = para.add_run(testo[last:m.start()])
+            run.font.size = Pt(size_pt)
+        if m.group(1) is not None:
+            run = para.add_run(m.group(1))
+            run.bold = True
+        else:
+            run = para.add_run(m.group(2))
+            run.italic = True
+        run.font.size = Pt(size_pt)
+        last = m.end()
+    if last < len(testo):
+        run = para.add_run(testo[last:])
+        run.font.size = Pt(size_pt)
+    return para
 
 
 # ─── COSTRUZIONE DOCUMENTO (helper condivisi) ──────────────────────────────────
@@ -54,7 +79,7 @@ def _costruisci_documento(contenuto: str, profilo: dict) -> Any:
 
     for riga in testo_corrente.split("\n"):
         if riga.strip():
-            para = doc.add_paragraph(riga)
+            para = _aggiungi_paragrafo_formattato(doc, riga)
             para.paragraph_format.space_after = Pt(6)
 
     if glossario_corrente:
