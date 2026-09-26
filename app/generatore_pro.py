@@ -726,4 +726,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # La console Windows (cp1252) non sa stampare simboli come "✓": senza questo
+    # il print finale va in UnicodeEncodeError anche a generazione riuscita.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     main()
