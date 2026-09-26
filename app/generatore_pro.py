@@ -2,8 +2,12 @@
 # Include: testo adattato, infografica, slide, glossario calibrato,
 #          quiz (A/B/C), registro qualità, integrazione Classroom, video
 #
-# Uso base:
+# Uso base (Gemini, richiede API key):
 #   python generatore_pro.py --studente mario --testo testi/storia.txt
+#
+# Uso con modello locale Ollama (gratis, offline, nessuna chiave API):
+#   python generatore_pro.py --studente mario --testo testi/storia.txt --backend ollama
+#   python generatore_pro.py --studente mario --testo testi/storia.txt --backend ollama --modello-ollama glm-4.7-flash
 #
 # Con feature Pro:
 #   python generatore_pro.py --studente mario --testo testi/storia.txt --glossario-pro
@@ -13,12 +17,15 @@
 #   python generatore_pro.py --studente mario --testo testi/storia.txt --video
 #
 # Verifica il modello attivo su: aistudio.google.com/models
+# Modelli locali disponibili: ollama list
 
 import os
 import sys
 import csv
 import yaml
 import argparse
+import concurrent.futures
+import requests
 from typing import Any
 from google import genai
 from google.genai import types as _genai_types
@@ -30,6 +37,43 @@ from datetime import datetime
 from pathlib import Path
 
 _GENERA_CONFIG = _genai_types.GenerateContentConfig(temperature=0.7, max_output_tokens=8192)
+
+OLLAMA_URL = "http://localhost:11434/api/generate"
+MODELLO_OLLAMA_DEFAULT = "qwen3.6:27b"  # alternative locali: glm-4.7-flash, ministral-3:8b, qwen3.5:4b
+
+
+class _RispostaOllama:
+    """Imita l'oggetto risposta di google-genai (.text) per riuso di genera_contenuto()."""
+    def __init__(self, text: str):
+        self.text = text
+
+
+class _OllamaModelsNamespace:
+    """Imita l'attributo .models di genai.Client, stessa firma di generate_content()."""
+    def __init__(self, nome_modello: str):
+        self.nome_modello = nome_modello
+
+    def generate_content(self, model=None, contents=None, config=None) -> _RispostaOllama:
+        # "model"/"config" arrivano dalla firma Gemini e vengono ignorati: il modello
+        # locale è quello scelto con --modello-ollama.
+        risposta = requests.post(
+            OLLAMA_URL,
+            json={"model": self.nome_modello, "prompt": contents, "stream": False},
+            timeout=600,
+        )
+        risposta.raise_for_status()
+        return _RispostaOllama(risposta.json().get("response", ""))
+
+
+class ModelloOllama:
+    """Backend locale via Ollama — stessa interfaccia di genai.Client (.models.generate_content).
+
+    I dati degli studenti (profili PDP/PEI) restano in locale, senza inviarli a
+    un'API esterna: privacy migliore rispetto a Gemini per contenuti sensibili.
+    Richiede Ollama attivo in locale.
+    """
+    def __init__(self, nome_modello: str = MODELLO_OLLAMA_DEFAULT):
+        self.models = _OllamaModelsNamespace(nome_modello)
 
 # ─── RETROCOMPATIBILITÀ CORE ──────────────────────────────────────────────────
 # Preferisci i moduli condivisi in core/ quando importabili (es. eseguendo da app/).
@@ -45,7 +89,7 @@ try:
     )
     from core.profiles import (
         carica_profilo as _core_carica_profilo,
-        costruisci_istruzioni as _core_costruisci_istruzioni,
+        costruisci_istruzioni,
     )
     _CORE_AVAILABLE = True
 except ImportError:
@@ -58,6 +102,32 @@ if _CORE_AVAILABLE:
     MODELLO_GEMINI = _CORE_MODELLO_GEMINI
 else:
     MODELLO_GEMINI = "gemini-2.5-flash"  # aggiorna se obsoleto: aistudio.google.com/models
+
+    def costruisci_istruzioni(profilo: dict) -> str:  # type: ignore[misc]
+        from core.config import MAX_PAROLE_FRASE_DEFAULT
+        p = profilo.get("presentazione", {}) or {}
+        difficolta = profilo.get("profilo_cognitivo", {}).get("aree_difficolta", {}) or {}
+        note = profilo.get("note_osservazioni", []) or []
+        max_p = profilo.get("max_parole_frase", MAX_PAROLE_FRASE_DEFAULT)
+        istr = []
+        if difficolta.get("lettura"):
+            istr.append(f"Usa frasi brevi (max {max_p} parole). Evita subordinate complesse.")
+        if difficolta.get("memoria_di_lavoro"):
+            istr.append("Un concetto per paragrafo.")
+        if difficolta.get("scrittura"):
+            istr.append("Usa elenchi puntati invece di paragrafi continui.")
+        istr += [
+            f"Ogni blocco: massimo {p.get('max_punti_per_slide', 3)} punti elenco.",
+            f"Ogni paragrafo: massimo {p.get('max_righe_paragrafo', 4)} righe.",
+            "Evidenzia in grassetto le parole chiave (max 3 per paragrafo).",
+            "Usa corsivo per i termini tecnici alla prima occorrenza.",
+        ]
+        for nota in note:
+            if nota:
+                istr.append(str(nota))
+        if not istr:
+            istr.append(f"Adattamento standard. Frasi brevi (max {max_p} parole), struttura chiara.")
+        return "\n".join(f"- {i}" for i in istr)
 
 
 def carica_api_key() -> str:
@@ -97,31 +167,6 @@ def carica_testo(percorso_testo: str) -> str:
 
 
 # ─── COSTRUZIONE PROMPT ───────────────────────────────────────────────────────
-
-def costruisci_istruzioni(profilo: dict) -> str:
-    p = profilo.get("presentazione", {})
-    difficolta = profilo.get("profilo_cognitivo", {}).get("aree_difficolta", {})
-    note = profilo.get("note_osservazioni", [])
-    istruzioni = []
-
-    if difficolta.get("lettura"):
-        istruzioni.append("Usa frasi brevi (max 20 parole). Evita subordinate complesse.")
-    if difficolta.get("memoria_di_lavoro"):
-        istruzioni.append("Un concetto per paragrafo. Non unire più idee nello stesso blocco.")
-    if difficolta.get("scrittura"):
-        istruzioni.append("Usa elenchi puntati invece di paragrafi continui dove possibile.")
-
-    istruzioni.append(f"Ogni blocco: massimo {p.get('max_punti_per_slide', 3)} punti elenco.")
-    istruzioni.append(f"Ogni paragrafo: massimo {p.get('max_righe_paragrafo', 4)} righe.")
-    istruzioni.append("Evidenzia in grassetto le parole chiave (max 3 per paragrafo).")
-    istruzioni.append("Usa corsivo per i termini tecnici alla prima occorrenza.")
-
-    for nota in note:
-        if nota:
-            istruzioni.append(nota)
-
-    return "\n".join(f"- {i}" for i in istruzioni)
-
 
 def costruisci_prompt_testo(testo: str, istruzioni: str) -> str:
     return f"""Sei un esperto di didattica inclusiva per studenti con DSA e BES.
@@ -266,7 +311,7 @@ def genera_contenuto(prompt: str, model: Any) -> str:
         )
         return risposta.text
     except Exception as e:
-        print(f"Errore Gemini: {e}")
+        print(f"Errore generazione contenuto: {e}")
         return ""
 
 
@@ -562,7 +607,6 @@ def genera_video(testo_adattato: str, cartella_out: str):
 # locali (che restano definite sopra come fallback statico per ambienti senza core).
 if _CORE_AVAILABLE:
     carica_profilo = _core_carica_profilo            # noqa: F811
-    costruisci_istruzioni = _core_costruisci_istruzioni  # noqa: F811
     salva_testo_docx = _core_salva_testo_docx        # noqa: F811
     salva_slide_pptx = _core_salva_slide_pptx        # noqa: F811
 
@@ -589,11 +633,14 @@ def main():
                         help="Pubblica su Google Classroom (F.3)")
     parser.add_argument("--video", action="store_true",
                         help="Genera video con voce narrante (F.5)")
+    parser.add_argument("--backend", choices=["gemini", "ollama"], default="gemini",
+                        help="Motore AI: 'gemini' (API, default) o 'ollama' (locale, gratis, offline)")
+    parser.add_argument("--modello-ollama", default=MODELLO_OLLAMA_DEFAULT,
+                        help=f"Modello Ollama da usare con --backend ollama (default: {MODELLO_OLLAMA_DEFAULT})")
     args = parser.parse_args()
 
     print(f"\n=== Generatore da Profili AI — studente: {args.studente} ===\n")
 
-    api_key = carica_api_key()
     try:
         profilo = carica_profilo(args.studente)
     except FileNotFoundError:
@@ -603,7 +650,12 @@ def main():
         )
     testo = carica_testo(args.testo)
 
-    model = genai.Client(api_key=api_key)
+    if args.backend == "ollama":
+        print(f"Backend: Ollama locale ({args.modello_ollama}) — nessuna chiave API richiesta\n")
+        model = ModelloOllama(args.modello_ollama)
+    else:
+        api_key = carica_api_key()
+        model = genai.Client(api_key=api_key)
 
     istruzioni = costruisci_istruzioni(profilo)
     if args.nota:
@@ -615,19 +667,18 @@ def main():
     cartella_out = f"output/{nome_studente}/{data_oggi}{suffisso}"
     os.makedirs(cartella_out, exist_ok=True)
 
-    # BASE: testo adattato
-    print("1/3 Genero il testo adattato...")
-    testo_adattato_raw = genera_contenuto(costruisci_prompt_testo(testo, istruzioni), model)
+    # BASE: testo, infografica e slide in parallelo
+    print("Genero testo adattato, infografica e slide in parallelo...")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
+        fut_testo = executor.submit(genera_contenuto, costruisci_prompt_testo(testo, istruzioni), model)
+        fut_infografica = executor.submit(genera_contenuto, costruisci_prompt_infografica(testo, istruzioni), model)
+        fut_slide = executor.submit(genera_contenuto, costruisci_prompt_slide(testo, istruzioni), model)
+        testo_adattato_raw = fut_testo.result()
+        infografica = fut_infografica.result()
+        slide_content = fut_slide.result()
+
     salva_testo_docx(testo_adattato_raw, profilo, f"{cartella_out}/testo_adattato.docx")
-
-    # BASE: infografica
-    print("2/3 Genero l'infografica...")
-    infografica = genera_contenuto(costruisci_prompt_infografica(testo, istruzioni), model)
     salva_testo_txt(infografica, f"{cartella_out}/infografica.txt")
-
-    # BASE: slide
-    print("3/3 Genero le slide...")
-    slide_content = genera_contenuto(costruisci_prompt_slide(testo, istruzioni), model)
     salva_slide_pptx(slide_content, profilo, f"{cartella_out}/presentazione.pptx")
 
     # PRO F.1: glossario calibrato

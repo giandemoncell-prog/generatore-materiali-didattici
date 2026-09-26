@@ -3,6 +3,11 @@ google-genai>=2.5.0
 python-docx>=1.1.0
 python-pptx>=0.6.23
 pyyaml>=6.0
+requests>=2.31.0
+
+# Backend locale — Ollama (--backend ollama)
+# Richiede Ollama attivo su localhost:11434 con un modello scaricato, es.:
+#   ollama pull qwen3.6:27b
 
 # Funzionalità Pro — Classroom (F.3)
 google-api-python-client>=2.0.0
