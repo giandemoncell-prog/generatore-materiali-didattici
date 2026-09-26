@@ -4,6 +4,8 @@ venv/
 
 # Chiave API — mai nel repo
 .env
+.streamlit/secrets.toml
+app/.streamlit/secrets.toml
 
 # Output generati (dati personali studenti)
 output/
