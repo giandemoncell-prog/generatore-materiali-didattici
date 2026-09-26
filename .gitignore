@@ -39,3 +39,5 @@ pytest_output.txt
 
 # File OMC
 .omc/
+
+pytest_out*.txt
