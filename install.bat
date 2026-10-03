@@ -4,6 +4,8 @@ REM Doppio clic su install.bat (o esegui da cmd)
 
 setlocal EnableDelayedExpansion
 chcp 65001 >nul 2>&1
+REM Lavora sempre nella cartella del .bat (es. se lanciato come amministratore da System32)
+cd /d "%~dp0"
 
 echo.
 echo ╔═══════════════════════════════════════════════════╗
@@ -12,8 +14,13 @@ echo ╚════════════════════════
 echo.
 
 REM ─── 1. Verifica Python ───────────────────────────────────────────────────────
-python --version >nul 2>&1
-if errorlevel 1 (
+REM Prova prima il launcher "py" (su alcuni PC "python" apre lo Store o non esiste)
+set PYTHON=
+py -3 --version >nul 2>&1 && set PYTHON=py -3
+if "!PYTHON!"=="" (
+    python --version >nul 2>&1 && set PYTHON=python
+)
+if "!PYTHON!"=="" (
     echo [ERRORE] Python non trovato.
     echo   Scaricalo da: https://www.python.org/downloads/
     echo   Durante l'installazione spunta "Add Python to PATH"
@@ -21,7 +28,7 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-for /f "tokens=2 delims= " %%v in ('python --version 2^>^&1') do set PY_VER=%%v
+for /f "tokens=2 delims= " %%v in ('!PYTHON! --version 2^>^&1') do set PY_VER=%%v
 echo [OK] Python %PY_VER% trovato
 
 REM Verifica versione minima 3.9
@@ -44,7 +51,7 @@ REM ─── 2. Ambiente virtuale Python ────────────�
 if not exist ".venv\" (
     echo.
     echo [INFO] Creo ambiente virtuale Python...
-    python -m venv .venv
+    !PYTHON! -m venv .venv
     if errorlevel 1 (
         echo [ERRORE] Impossibile creare il venv.
         pause
@@ -77,6 +84,8 @@ echo.
 echo Configurazione chiave API Gemini
 echo   La chiave e' gratuita — ottienila su:
 echo   https://aistudio.google.com/apikey
+echo   Senza chiave puoi usare un modello locale con Ollama:
+echo   avvia_cli.bat ... --backend ollama  (gratis, offline, dati sul PC)
 echo.
 set /p API_KEY="  Incolla qui la tua chiave (es. AIzaSy...): "
 if not "!API_KEY!"=="" (
@@ -145,6 +154,8 @@ echo   GUI desktop :  doppio clic su avvia_gui.bat
 echo   Web browser :  doppio clic su avvia_web.bat
 echo                  poi apri http://localhost:8501
 echo   CLI         :  avvia_cli.bat --studente mario --testo testi\esempio_investiture.txt
+echo   CLI locale  :  aggiungi --backend ollama [--modello-ollama ministral-3:8b]
+echo                  (richiede Ollama attivo su localhost:11434)
 echo.
 echo   Profili disponibili in:  profili\
 echo   Testi di esempio in:     testi\
